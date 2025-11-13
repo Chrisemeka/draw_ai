@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(uuid())
+  googleId        String   @unique
+  email           String   @unique
+  name            String?
+  profileImage    String? 
+  emailVerified   Boolean  @default(false)
+  
+  scenes        Scene[]
+  refreshTokens RefreshToken[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("users")
+}
+
+model RefreshToken {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastUsed   DateTime @default(now())
+  revoked    Boolean  @default(false)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Scene {
+  id           String   @id @default(uuid())
+  userId       String
+  
+  title        String
+  elements     String   @db.Text  // Compressed JSON
+  elementCount Int
+  thumbnail    String?  @db.Text  // Optional: Base64 or URL
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("scenes")
+}
